@@ -8,19 +8,19 @@ from constants import SONGSTATS_URL, SONGSTATS_API_URL, \
     MAX_RETRIES
 from enums import TypeLink
 from loggers import AppLogger
-from scrappers import PlaywrightCrawler
-from scrappers.playwright_crawler import RequestInterceptor
+from scrappers import PlaywrightScrapper
+from scrappers.playwright_scrapper import RequestInterceptor
 
 
 class SongstatsManager:
     def __init__(self):
         self.logger = AppLogger().get_logger()
-        self.crawler = PlaywrightCrawler()
+        self.crawler = PlaywrightScrapper()
 
     def get_matching_labels(self, label_name: str) -> List[Dict[str, str]]:
         interceptor = RequestInterceptor(SONGSTATS_API_URL)
         with sync_playwright() as p:
-            browser, context, page = self.crawler.init_playwright_config(p)
+            page = self.crawler.init_playwright_page(p)
             page.on('request', interceptor)
             try:
                 page.goto(SONGSTATS_URL)
@@ -36,20 +36,20 @@ class SongstatsManager:
                 self.logger.error(f'An error occurred: {e}')
                 return []
             finally:
-                self.crawler.close_connection(browser, context)
+                self.crawler.close_connection()
 
     def get_label_info(self, label_name: str, label_info: Dict[str, str]) -> Dict[str, str | List[
         Dict[str, str]]] | None:
         label_url = self.build_songstats_url(label_info)
         with sync_playwright() as p:
-            browser, context, page = self.crawler.init_playwright_config(p)
+            page = self.crawler.init_playwright_page(p)
             try:
                 return self._perform_scraping_with_label_url(page, label_url, label_name)
             except Exception as e:
                 self.logger.error(f'An error occurred: {e}')
                 return None
             finally:
-                self.crawler.close_connection(browser, context)
+                self.crawler.close_connection()
 
     def _perform_scraping_with_label_url(self, page: Page, label_url: str, label_name: str) -> Dict[str, Any]:
         page.goto(label_url)
@@ -63,7 +63,6 @@ class SongstatsManager:
     def _scrap_label_country(self, page: Page, label_name: str) -> str:
         parent_selector = 'div[style*="display: flex; flex-direction: column; align-items: center;"]'
         country_span_selector = f'{parent_selector} > div:last-child > span'
-
         for attempt in range(MAX_RETRIES):
             try:
                 timeout = 600 * (2 ** attempt)

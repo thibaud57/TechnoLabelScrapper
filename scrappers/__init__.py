@@ -1,2 +1,2 @@
-from .playwright_crawler import PlaywrightCrawler
+from .playwright_scrapper import PlaywrightScrapper
 from .requests_helper import RequestsHelper
