@@ -1,5 +1,5 @@
 MAX_RETRIES = 3
-CREDENTIALS_FILE = "F:\Bureau\LabelScrapper\credentials.json"
+CREDENTIALS_FILE = "F:\Bureau\TechnoLabelScapper\credentials.json"
 SPREADSHEET_ID = "134ilr5ikGxh3nvTAy4jJL5JZvwZLmCTqpgN8cgZ85yU"
 LABELS_SHEET_TITLE = "Labels"
 LABEL_NAME_ROW = "A"
