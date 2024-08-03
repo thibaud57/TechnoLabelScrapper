@@ -15,7 +15,7 @@ class RequestsHelper:
         self.session = requests.Session()
         self.headers = {'User-Agent': USER_AGENTS[0]}
 
-    def search_label(self, url, type_link):
+    def scrap_with_requests(self, url, type_link):
         for _ in range(MAX_RETRIES):
             try:
                 response = self.session.get(url, headers=self.headers)
@@ -23,9 +23,11 @@ class RequestsHelper:
                 if response.status_code == StatusCode.SUCCESS.value:
                     match type_link:
                         case TypeLink.BEATPORT_URL:
-                            return self._beatport_crawler(response.content)
+                            return self._beatport_scrapper(response.content)
                         case TypeLink.SOUNDCLOUD_URL:
-                            return self._soundcloud_crawler(response.content)
+                            return self._soundcloud_scrapper(response.content)
+                        case TypeLink.BEATSTATS_URL:
+                            return self._beatstats_scrapper(response.content)
                 elif response.status_code == StatusCode.FORBIDDEN.value:
                     self.logger.warning('Received a 403 status code. Retrying...')
                     continue
@@ -40,7 +42,7 @@ class RequestsHelper:
         self.logger.warning('Max retries reached. Exiting.')
         return None
 
-    def _beatport_crawler(self, content):
+    def _beatport_scrapper(self, content):
         try:
             soup = BeautifulSoup(content, 'html.parser')
             script = soup.find('script', {'id': BEATPORT_SCRIPT_ID})
@@ -53,10 +55,10 @@ class RequestsHelper:
                 self.logger.error('Error while loading json.')
                 return None
         except Exception as e:
-            self.logger.error(f'Error while parsing content: {e}')
+            self.logger.error(f'Error while scrapping content: {e}')
             return None
 
-    def _soundcloud_crawler(self, content):
+    def _soundcloud_scrapper(self, content):
         try:
             soup = BeautifulSoup(content, 'html.parser')
             script = soup.find('script', text=lambda t: t and SOUNDCLOUD_SCRIPT_ID in t)
@@ -75,7 +77,16 @@ class RequestsHelper:
                 self.logger.error('Error while loading JSON.')
                 return None
         except Exception as e:
-            self.logger.error(f'Error while parsing content: {e}')
+            self.logger.error(f'Error while scrapping content: {e}')
+            return None
+
+    def _beatstats_scrapper(self, content):
+        try:
+            soup = BeautifulSoup(content, 'html.parser')
+            content_artists = soup.find(id="content-artists")
+            return [] if not content_artists else content_artists
+        except Exception as e:
+            self.logger.error(f'Error while scrapping content: {e}')
             return None
 
     def _close(self):

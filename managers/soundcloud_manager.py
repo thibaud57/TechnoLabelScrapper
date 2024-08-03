@@ -1,23 +1,22 @@
 from enums import TypeLink
 from loggers import AppLogger
-from managers import MatchManager
 from scrappers import RequestsHelper
+from utils.utils import find_demo_email
 
 
 class SoundcloudManager:
     def __init__(self):
         self.logger = AppLogger().get_logger()
         self.helper = RequestsHelper()
-        self.match_manager = MatchManager()
 
     def get_soundcloud_info(self, url, label_name):
         try:
-            data = self.helper.search_label(url, TypeLink.SOUNDCLOUD_URL)
+            data = self.helper.scrap_with_requests(url, TypeLink.SOUNDCLOUD_URL)
             user_profile_info = self._get_user_profile_info(data)
             if user_profile_info:
                 return {
                     'name': label_name,
-                    'email_demo': self.match_manager.find_demo_email(user_profile_info.get('description', '')),
+                    'email_demo': find_demo_email(user_profile_info.get('description', '')),
                     'soundcloud_followers': user_profile_info.get('followers_number', 0)
                 }
             return None

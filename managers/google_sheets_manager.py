@@ -6,6 +6,7 @@ from googleapiclient.errors import HttpError
 from constants import OUI, NON
 from enums import TypeLink
 from loggers import AppLogger
+from utils.utils import find_best_match
 
 
 class GoogleSheetsManager:
@@ -68,10 +69,11 @@ class GoogleSheetsManager:
                 label_info = success_info['label']
                 column_updates = [
                     {'range': f'Labels!B{row}', 'values': [[label_info.get('country', '')]]},
-                    {'range': f'Labels!O{row}', 'values': [[label_info['links'].get(TypeLink.SOUNDCLOUD_URL.value, '')]]},
-                    {'range': f'Labels!P{row}', 'values': [[label_info['links'].get(TypeLink.FACEBOOK_URL.value, '')]]},
-                    {'range': f'Labels!Q{row}', 'values': [[label_info['links'].get(TypeLink.INSTAGRAM_URL.value, '')]]},
-                    {'range': f'Labels!R{row}', 'values': [[label_info['links'].get(TypeLink.BEATPORT_URL.value, '')]]},
+                    {'range': f'Labels!O{row}',
+                     'values': [[label_info['links'].get(TypeLink.SOUNDCLOUD_URL.name, '')]]},
+                    {'range': f'Labels!P{row}', 'values': [[label_info['links'].get(TypeLink.FACEBOOK_URL.name, '')]]},
+                    {'range': f'Labels!Q{row}', 'values': [[label_info['links'].get(TypeLink.INSTAGRAM_URL.name, '')]]},
+                    {'range': f'Labels!R{row}', 'values': [[label_info['links'].get(TypeLink.BEATPORT_URL.name, '')]]},
                     {'range': f'Labels!U{row}', 'values': [[OUI]]}
                 ]
                 updates.extend(column_updates)
@@ -80,7 +82,6 @@ class GoogleSheetsManager:
                 self.logger.error(f'KeyError while preparing update: {str(e)}. Label info: {success_info}')
             except Exception as e:
                 self.logger.error(f'Unexpected error while preparing update: {str(e)}. Label info: {success_info}')
-
         self.logger.info(f'Prepared {len(updates)} individual column updates for {len(labels_in_success)} labels')
         return updates
 
@@ -102,8 +103,41 @@ class GoogleSheetsManager:
                 self.logger.error(f'KeyError while preparing update: {str(e)}. Label info: {success_info}')
             except Exception as e:
                 self.logger.error(f'Unexpected error while preparing update: {str(e)}. Label info: {success_info}')
-
         self.logger.info(f'Prepared {len(updates)} individual column updates for {len(labels_in_success)} labels')
+        return updates
+
+    def prepare_batch_updates_for_beatstats(self, labels):
+        updates = []
+        for label in labels:
+            try:
+                row = label['row']
+                position = label.get('position', '')
+                is_hype = label.get('is_hype', False)
+                top_value = f"{position} HYPE" if is_hype else position
+
+                is_new = label.get('is_new', False)
+                if is_new:
+                    column_updates = [
+                        {'range': f'Labels!A{row}', 'values': [[label.get('name', '')]]},
+                        {'range': f'Labels!C{row}', 'values': [[label.get('genre', '')]]},
+                        {'range': f'Labels!R{row}', 'values': [[label.get(TypeLink.BEATPORT_URL.name, '')]]},
+                        {'range': f'Labels!T{row}', 'values': [[top_value]]},
+                        {'range': f'Labels!V{row}', 'values': [[OUI]]}
+                    ]
+                    updates.extend(column_updates)
+                else:
+                    column_updates = [
+                        {'range': f'Labels!R{row}', 'values': [[label.get(TypeLink.BEATPORT_URL.name, '')]]},
+                        {'range': f'Labels!T{row}', 'values': [[top_value]]},
+                        {'range': f'Labels!V{row}', 'values': [[OUI]]}
+                    ]
+                    updates.extend(column_updates)
+                self.logger.debug(f"Prepared updates for label: {label.get('name', 'Unknown')} at row {row}")
+            except KeyError as e:
+                self.logger.error(f'KeyError while preparing update: {str(e)}. Label info: {label}')
+            except Exception as e:
+                self.logger.error(f'Unexpected error while preparing update: {str(e)}. Label info: {label}')
+        self.logger.info(f'Prepared {len(updates)} individual column updates for {len(labels)} labels')
         return updates
 
     def batch_update(self, updates):

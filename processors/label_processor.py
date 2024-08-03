@@ -5,14 +5,14 @@ from typing import Dict, Any, List
 from constants import THREADS_NUMBER, CREDENTIALS_FILE, SPREADSHEET_ID, OUI
 from enums import MenuAction, TypeLink
 from loggers import AppLogger
-from managers import GoogleSheetsManager, SongstatsManager, MatchManager, BeatportManager, SoundcloudManager
+from managers import GoogleSheetsManager, SongstatsManager, BeatportManager, SoundcloudManager
+from utils.utils import find_best_match
 
 
 class LabelProcessor:
     def __init__(self):
         self.logger = AppLogger().get_logger()
         self.sheets_manager = GoogleSheetsManager(CREDENTIALS_FILE, SPREADSHEET_ID)
-        self.match_manager = MatchManager()
         self.filtered_labels_from_sheet: List[Dict[str, Any]] = []
         self.labels_in_success: List[Dict[str, Any]] = []
         self.labels_in_failure: List[Dict[str, str]] = []
@@ -58,10 +58,10 @@ class LabelProcessor:
                 {
                     'row': row[0],
                     'name': row[1],
-                    TypeLink.BEATPORT_URL.value: row[2] if len(row) > 2 and row[2] else None,
-                    TypeLink.SOUNDCLOUD_URL.value: row[3] if len(row) > 3 and row[3] else None,
-                    TypeLink.FACEBOOK_URL.value: row[4] if len(row) > 4 and row[4] else None,
-                    TypeLink.INSTAGRAM_URL.value: row[5] if len(row) > 5 and row[5] else None,
+                    TypeLink.BEATPORT_URL.name: row[2] if len(row) > 2 and row[2] else None,
+                    TypeLink.SOUNDCLOUD_URL.name: row[3] if len(row) > 3 and row[3] else None,
+                    TypeLink.FACEBOOK_URL.name: row[4] if len(row) > 4 and row[4] else None,
+                    TypeLink.INSTAGRAM_URL.name: row[5] if len(row) > 5 and row[5] else None,
                 }
                 for row in labels
                 if row[2] or row[3] or row[4] or row[5]
@@ -81,7 +81,7 @@ class LabelProcessor:
                 self._add_to_failure(label_name, 'No matching labels found')
                 return
 
-            best_match = self.match_manager.find_best_match(label_name, labels_info)
+            best_match = find_best_match(label_name, labels_info)
             if not best_match:
                 self._add_to_failure(label_name, 'No best match found')
                 return

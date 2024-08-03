@@ -14,7 +14,7 @@ class BeatportManager:
 
     def get_beatport_info(self, url, label_name):
         release_url = self._generate_release_url(url)
-        data = self.helper.search_label(release_url, TypeLink.BEATPORT_URL)
+        data = self.helper.scrap_with_requests(release_url, TypeLink.BEATPORT_URL)
         if release_info := self._get_last_releases_info(data):
             releases_number = release_info.get('releases_number', 0)
             artists_number = release_info.get('artists_number', 0)

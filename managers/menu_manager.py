@@ -60,15 +60,15 @@ class MenuManager:
 
     def _process_top100(self):
         top_processor = TopProcessor()
-        # try:
-        #     self.logger.info('###START TRACKS PROCESSING###')
-        #     top_processor.run()
-        # except Exception as e:
-        #     self.logger.error(f'An error occurred while processing the tracks: {e}')
-        # finally:
-        #     if len(track_processor.tracks_in_success) > 0 or len(track_processor.tracks_in_failure) > 0:
-        #         self._handle_logs(track_processor)
-        #     self.logger.info('###END TRACKS PROCESSING###')
+        try:
+            self.logger.info('###START TOP 100 PROCESSING###')
+            top_processor.run()
+        except Exception as e:
+            self.logger.error(f'An error occurred while processing the top 100: {e}')
+        finally:
+            # if len(track_processor.tracks_in_success) > 0 or len(track_processor.tracks_in_failure) > 0:
+            #     self._handle_logs(track_processor)
+            self.logger.info('###END TOP 100 PROCESSING###')
 
     def _handle_logs(self, processor):
         if len(processor.labels_in_success) > 0 or len(processor.labels_in_failure) > 0:

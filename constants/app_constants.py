@@ -23,3 +23,4 @@ BEATPORT_SCRIPT_ID = "__NEXT_DATA__"
 ACTIF_MINIMUM_RELEASES_NUMBER = 10
 ARTISTS_MINIMUM_NUMBER = 3
 SOUNDCLOUD_SCRIPT_ID = "window.__sc_hydration"
+BEATSTATS_LIST_GENRE_URL = "https://www.beatstats.com/labels/home/list?genre="
