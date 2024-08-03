@@ -37,7 +37,7 @@ class TopProcessor:
                     genre = success_info['genre']
                     self.logger.warning(f'No new label to add for {genre}')
 
-            success = self.sheets_manager.batch_update(updates)
+            success = self.sheets_manager.batch_update_in_chunks(updates)
             if not success:
                 self.logger.error('Failed to perform batch update')
 

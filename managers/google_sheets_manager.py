@@ -1,9 +1,11 @@
+from time import sleep
+
 from google.oauth2.credentials import Credentials
 from google.oauth2.service_account import Credentials
 from googleapiclient.discovery import build
 from googleapiclient.errors import HttpError
 
-from constants import OUI, NON
+from constants import OUI, NON, MAX_RETRIES
 from enums import TypeLink
 from loggers import AppLogger
 from utils.utils import extract_number
@@ -115,7 +117,7 @@ class GoogleSheetsManager:
                     ]
                     updates.extend(column_updates)
                 else:
-                    label_from_sheet =  self.read_columns(f'Labels!T{row},C{row}')[0]
+                    label_from_sheet = self.read_columns(f'Labels!T{row},C{row}')[0]
                     top_number = extract_number(top_value)
                     actual_number = extract_number(label_from_sheet[1])
                     best_top = min(top_number, actual_number) if actual_number > 0 else top_number
@@ -135,19 +137,36 @@ class GoogleSheetsManager:
         self.logger.info(f'Prepared {len(updates)} individual column updates for {len(labels)} labels')
         return updates
 
-    def batch_update(self, updates):
-        try:
-            body = {
-                'valueInputOption': 'USER_ENTERED',
-                'data': updates
-            }
-            result = self.service.spreadsheets().values().batchUpdate(
-                spreadsheetId=self.spreadsheet_id, body=body).execute()
-            self.logger.info(f"Batch update completed. {result.get('totalUpdatedCells')} cells updated.")
-            return True
-        except HttpError as e:
-            self.logger.error(f'HTTP error occurred during batch update: {e}')
-            return False
-        except Exception as e:
-            self.logger.error(f'Unexpected error during batch update: {e}')
-            return False
+    def batch_update(self, updates, delay=5):
+        for attempt in range(MAX_RETRIES):
+            try:
+                body = {
+                    'valueInputOption': 'USER_ENTERED',
+                    'data': updates
+                }
+                result = self.service.spreadsheets().values().batchUpdate(
+                    spreadsheetId=self.spreadsheet_id, body=body).execute()
+                self.logger.info(f"Batch update completed. {result.get('totalUpdatedCells')} cells updated.")
+                return True
+            except HttpError as e:
+                self.logger.error(f'HTTP error occurred during batch update (attempt {attempt + 1}/{MAX_RETRIES}): {e}')
+                if attempt < MAX_RETRIES - 1:
+                    sleep(delay)
+                else:
+                    return False
+            except Exception as e:
+                self.logger.error(f'Unexpected error during batch update (attempt {attempt + 1}/{MAX_RETRIES}): {e}')
+                if attempt < MAX_RETRIES - 1:
+                    sleep(delay)
+                else:
+                    return False
+        return False
+
+    def batch_update_in_chunks(self, updates, chunk_size=500):
+        for i in range(0, len(updates), chunk_size):
+            chunk = updates[i:i + chunk_size]
+            success = self.batch_update(chunk)
+            if not success:
+                self.logger.error(f"Failed to update chunk starting at index {i}")
+                return False
+        return True

@@ -81,7 +81,7 @@ class SongstatsManager:
         for type_link in TypeLink:
             link = self._get_link(page, type_link.value, label_name)
             if link:
-                label_links[type_link.value] = link
+                label_links[type_link.name] = link
         return label_links
 
     def _get_link(self, page: Page, url: str, label_name: str) -> Optional[str]:

@@ -40,7 +40,7 @@ class LabelProcessor:
             updates = self.sheets_manager.prepare_batch_updates_for_songstats(
                 self.labels_in_success) if action == MenuAction.PROCESS_SONGSTATS.value else self.sheets_manager.prepare_batch_updates_for_links(
                 self.labels_in_success)
-            success = self.sheets_manager.batch_update(updates)
+            success = self.sheets_manager.batch_update_in_chunks(updates)
             if not success:
                 self.logger.error('Failed to perform batch update')
 
