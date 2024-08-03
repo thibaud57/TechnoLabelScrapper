@@ -118,7 +118,7 @@ class GoogleSheetsManager:
                     label_from_sheet =  self.read_columns(f'Labels!T{row},C{row}')[0]
                     top_number = extract_number(top_value)
                     actual_number = extract_number(label_from_sheet[1])
-                    best_top = min(top_number, actual_number)
+                    best_top = min(top_number, actual_number) if actual_number > 0 else top_number
                     genre = label.get('genre', '') if top_number < actual_number else label_from_sheet[2]
                     column_updates = [
                         {'range': f'Labels!C{row}', 'values': [[genre]]},
