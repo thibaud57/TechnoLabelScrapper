@@ -27,19 +27,17 @@ class TopProcessor:
             executor.map(self._process_top_100, [genre for genre in BeatstatsGenre])
 
         if self.genres_in_success:
-            updates = []
             for success_info in self.genres_in_success:
                 sheet_labels = self._extract_labels_name_and_beatport_link_from_sheet()
                 filter_labels = self._filter_beatstats_labels(sheet_labels, success_info)
                 if filter_labels:
-                    updates.append(self.sheets_manager.prepare_batch_updates_for_beatstats(filter_labels))
+                    updates = self.sheets_manager.prepare_batch_updates_for_beatstats(filter_labels)
+                    success = self.sheets_manager.batch_update_in_chunks(updates)
+                    if not success:
+                        self.logger.error('Failed to perform batch update')
                 else:
                     genre = success_info['genre']
                     self.logger.warning(f'No new label to add for {genre}')
-
-            success = self.sheets_manager.batch_update_in_chunks(updates)
-            if not success:
-                self.logger.error('Failed to perform batch update')
 
     def _process_top_100(self, genre: BeatstatsGenre):
         self.logger.info(f'Processing top 100 from Beatstats for {genre.name}')
