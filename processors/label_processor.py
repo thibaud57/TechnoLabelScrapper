@@ -68,7 +68,6 @@ class LabelProcessor:
             ]
 
     def _process_label_content_from_songstats(self, label: Dict[str, Any]):
-        self.logger.info('Processing label from Songstats')
         try:
             label_name, label_row = self._get_label_info(label)
             if not label_row:
@@ -101,7 +100,6 @@ class LabelProcessor:
             self._handle_exception(label_name, e)
 
     def _process_label_content_from_links(self, label: Dict[str, Any]):
-        self.logger.info('Processing label from links')
         try:
             label_name, label_row = self._get_label_info(label)
             if not label_row:
@@ -123,7 +121,7 @@ class LabelProcessor:
     def _process_label_for_links(self, label: Dict[str, Any], label_name: str, label_row: int):
         processing_type_links = [TypeLink.BEATPORT_URL, TypeLink.SOUNDCLOUD_URL]
         for type_link in processing_type_links:
-            url = label.get(type_link.value)
+            url = label.get(type_link.name)
             if not url:
                 continue
 
