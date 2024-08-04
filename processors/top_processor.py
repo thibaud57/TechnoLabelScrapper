@@ -103,7 +103,7 @@ class TopProcessor:
         current_position_number = extract_number(current_position)
         new_position = self._format_position_with_hype(new_label.get('position', math.inf))
         new_position_number = extract_number(new_position)
-        if new_position_number < current_position_number:
+        if not current_position or new_position_number < current_position_number:
             sheet_label['genre'] = new_label.get('genre', '')
             sheet_label['position'] = new_position
             sheet_label['beatstats_flag'] = False
@@ -112,4 +112,4 @@ class TopProcessor:
         return sheet_label
 
     def _format_position_with_hype(self, position):
-        return f"{position} HYPE" if self.is_hype else f'{position} pas hype'
+        return f"{position} HYPE" if self.is_hype else position
