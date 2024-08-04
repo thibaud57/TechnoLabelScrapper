@@ -66,7 +66,7 @@ class TopProcessor:
              'genre': row[2],
              'position': row[3],
              TypeLink.BEATPORT_URL.name: row[4],
-             'beatstats_flag': row[5] == OUI}
+             'beatstats_flag': row[5]}
             for row in self.labels_from_sheet
         ]
 
