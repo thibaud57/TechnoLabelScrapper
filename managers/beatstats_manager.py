@@ -23,8 +23,7 @@ class BeatstatsManager:
                     "name": name,
                     "genre": self._map_beatstats_genre_to_music_genre(code_genre),
                     TypeLink.BEATPORT_URL.name: f'https://www.{link}',
-                    "position": position,
-                    "is_hype": self._is_genre_hype(code_genre)
+                    "position": position
                 }
                 for name, link, position in zip(names, links, positions)
             ]
@@ -66,10 +65,3 @@ class BeatstatsManager:
             return genre_mapping[genre]
         else:
             return genre
-
-    def _is_genre_hype(self, genre):
-        hype = [
-            BeatstatsGenre.HYPE_TECHNO_PEAK_TIME.value,
-            BeatstatsGenre.HYPE_MELODIC_HOUSE_TECHNO.value,
-        ]
-        return genre in hype

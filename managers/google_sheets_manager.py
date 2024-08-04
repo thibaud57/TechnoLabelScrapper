@@ -8,7 +8,6 @@ from googleapiclient.errors import HttpError
 from constants import OUI, NON, MAX_RETRIES
 from enums import TypeLink
 from loggers import AppLogger
-from utils.utils import extract_number
 
 
 class GoogleSheetsManager:
@@ -103,29 +102,20 @@ class GoogleSheetsManager:
         for label in labels:
             try:
                 row = label['row']
-                position = label.get('position', '')
-                is_hype = label.get('is_hype', False)
-                top_value = f"{position} HYPE" if is_hype else position
-                is_new = label.get('is_new', False)
-                if is_new:
+                update_label = label.get('update_label', False)
+                if update_label:
                     column_updates = [
-                        {'range': f'Labels!A{row}', 'values': [[label.get('name', '')]]},
                         {'range': f'Labels!C{row}', 'values': [[label.get('genre', '')]]},
-                        {'range': f'Labels!R{row}', 'values': [[label.get(TypeLink.BEATPORT_URL.name, '')]]},
-                        {'range': f'Labels!T{row}', 'values': [[top_value]]},
+                        {'range': f'Labels!T{row}', 'values': [[label.get('position', '')]]},
                         {'range': f'Labels!V{row}', 'values': [[OUI]]}
                     ]
                     updates.extend(column_updates)
                 else:
-                    label_from_sheet = self.read_columns(f'Labels!T{row},C{row}')[0]
-                    top_number = extract_number(top_value)
-                    actual_number = extract_number(label_from_sheet[1])
-                    best_top = min(top_number, actual_number) if actual_number > 0 else top_number
-                    genre = label.get('genre', '') if top_number < actual_number else label_from_sheet[2]
                     column_updates = [
-                        {'range': f'Labels!C{row}', 'values': [[genre]]},
+                        {'range': f'Labels!A{row}', 'values': [[label.get('name', '')]]},
+                        {'range': f'Labels!C{row}', 'values': [[label.get('genre', '')]]},
                         {'range': f'Labels!R{row}', 'values': [[label.get(TypeLink.BEATPORT_URL.name, '')]]},
-                        {'range': f'Labels!T{row}', 'values': [[best_top]]},
+                        {'range': f'Labels!T{row}', 'values': [[label.get('position', '')]]},
                         {'range': f'Labels!V{row}', 'values': [[OUI]]}
                     ]
                     updates.extend(column_updates)

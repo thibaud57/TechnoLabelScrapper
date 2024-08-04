@@ -1,3 +1,4 @@
+import math
 import threading
 from concurrent.futures import ThreadPoolExecutor
 
@@ -5,7 +6,7 @@ from constants import THREADS_NUMBER, CREDENTIALS_FILE, SPREADSHEET_ID, OUI
 from enums import BeatstatsGenre, TypeLink
 from loggers import AppLogger
 from managers import BeatstatsManager, GoogleSheetsManager
-from utils.utils import find_best_match
+from utils.utils import find_best_match, extract_number
 
 
 class TopProcessor:
@@ -18,16 +19,15 @@ class TopProcessor:
         self.genres_in_success = []
         self.genres_in_failure = []
         self.last_row = 0
+        self.is_hype = False
 
     def run(self):
-        self.labels_from_sheet = self.sheets_manager.read_columns('Labels!A2:A,R2:R,V2:V')
-        self.last_row = len(self.labels_from_sheet) + 1
-
         with ThreadPoolExecutor(max_workers=THREADS_NUMBER) as executor:
             executor.map(self._process_top_100, [genre for genre in BeatstatsGenre])
 
         if self.genres_in_success:
             for success_info in self.genres_in_success:
+                self._refresh_sheet_data(success_info['genre'])
                 sheet_labels = self._extract_labels_name_and_beatport_link_from_sheet()
                 filter_labels = self._filter_beatstats_labels(sheet_labels, success_info)
                 if filter_labels:
@@ -36,8 +36,17 @@ class TopProcessor:
                     if not success:
                         self.logger.error('Failed to perform batch update')
                 else:
-                    genre = success_info['genre']
-                    self.logger.warning(f'No new label to add for {genre}')
+                    self.logger.info(f'No updates to perform for genre {success_info["genre"]}')
+        else:
+            self.logger.info('No updates to perform for any genre')
+
+    def _refresh_sheet_data(self, genre:BeatstatsGenre):
+        self.labels_from_sheet = self.sheets_manager.read_columns('Labels!A2:A,C2:C,T2:T,R2:R,V2:V')
+        self.last_row = len(self.labels_from_sheet) + 1
+        self.is_hype = genre in [
+            BeatstatsGenre.HYPE_TECHNO_PEAK_TIME.name,
+            BeatstatsGenre.HYPE_MELODIC_HOUSE_TECHNO.name,
+        ]
 
     def _process_top_100(self, genre: BeatstatsGenre):
         self.logger.info(f'Processing top 100 from Beatstats for {genre.name}')
@@ -52,7 +61,12 @@ class TopProcessor:
 
     def _extract_labels_name_and_beatport_link_from_sheet(self):
         return [
-            {'row': row[0], "name": row[1], TypeLink.BEATPORT_URL.name: row[2], 'beatstats_flag': row[3] == OUI}
+            {'row': row[0],
+             'name': row[1],
+             'genre': row[2],
+             'position': row[3],
+             TypeLink.BEATPORT_URL.name: row[4],
+             'beatstats_flag': row[5] == OUI}
             for row in self.labels_from_sheet
         ]
 
@@ -61,20 +75,41 @@ class TopProcessor:
                       TypeLink.BEATPORT_URL.name in label}
         beatstats_labels = success_info['labels']
         updated_labels = []
+
         for label in beatstats_labels:
-            updated_label = None
+            sheet_label = None
+
             if TypeLink.BEATPORT_URL.name in label and label[TypeLink.BEATPORT_URL.name] in sheet_urls:
-                updated_label = sheet_urls[label[TypeLink.BEATPORT_URL.name]].copy()
+                sheet_label = sheet_urls[label[TypeLink.BEATPORT_URL.name]].copy()
             elif 'name' in label:
                 best_match = find_best_match(label['name'], sheet_labels, 99)
                 if best_match:
-                    updated_label = best_match.copy()
-            if updated_label:
-                updated_label.update({k: v for k, v in label.items() if k not in updated_label})
+                    sheet_label = best_match.copy()
+
+            if sheet_label:
+                updated_label = self._update_label_with_position_and_genre(sheet_label, label)
+                updated_labels.append(updated_label)
             else:
-                updated_label = label.copy()
+                new_label = label.copy()
                 self.last_row += 1
-                updated_label['row'] = self.last_row
-                updated_label['is_new'] = True
-            updated_labels.append(updated_label)
+                new_label['row'] = self.last_row
+                new_label['position'] = self._format_position_with_hype(label.get('position', math.inf))
+                updated_labels.append(new_label)
+
         return [label for label in updated_labels if not label.get('beatstats_flag', False)]
+
+    def _update_label_with_position_and_genre(self, sheet_label, new_label):
+        current_position = sheet_label.get('position', math.inf)
+        current_position_number = extract_number(current_position)
+        new_position = self._format_position_with_hype(new_label.get('position', math.inf))
+        new_position_number = extract_number(new_position)
+        if new_position_number < current_position_number:
+            sheet_label['genre'] = new_label.get('genre', '')
+            sheet_label['position'] = new_position
+            sheet_label['beatstats_flag'] = False
+            sheet_label['update_label'] = True
+            sheet_label.update({k: v for k, v in sheet_label.items()})
+        return sheet_label
+
+    def _format_position_with_hype(self, position):
+        return f"{position} HYPE" if self.is_hype else f'{position} pas hype'
