@@ -59,7 +59,8 @@ class BeatstatsManager:
             BeatstatsGenre.TRANCE_RAW_DEEP_HYPNOTIC.value: MusicGenre.TRANCE.value,
             BeatstatsGenre.PROGRESSIVE_HOUSE.value: MusicGenre.PROGRESSIVE.value,
             BeatstatsGenre.MELODIC_HOUSE_TECHNO.value: MusicGenre.MELODIC.value,
-            BeatstatsGenre.HYPE_MELODIC_HOUSE_TECHNO.value: MusicGenre.MELODIC.value
+            BeatstatsGenre.HYPE_MELODIC_HOUSE_TECHNO.value: MusicGenre.MELODIC.value,
+            BeatstatsGenre.DEEP_HOUSE.value: MusicGenre.DEEP_HOUSE.value
         }
         if genre in genre_mapping:
             return genre_mapping[genre]
