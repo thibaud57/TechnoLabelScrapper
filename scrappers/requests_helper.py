@@ -5,9 +5,8 @@ import time
 
 import requests
 from bs4 import BeautifulSoup
-from fake_useragent import UserAgent
 
-from constants import MAX_RETRIES, BEATPORT_SCRIPT_ID, SOUNDCLOUD_SCRIPT_ID
+from constants import MAX_RETRIES, BEATPORT_SCRIPT_ID, SOUNDCLOUD_SCRIPT_ID, USER_AGENTS
 from enums import StatusCode, TypeLink
 from loggers import AppLogger
 
@@ -16,15 +15,14 @@ class RequestsHelper:
     def __init__(self):
         self.logger = AppLogger().get_logger()
         self.session = requests.Session()
-        self.ua = UserAgent()
-        self.headers = {'User-Agent': self.ua.random}
+        self.headers = {'User-Agent': random.choice(USER_AGENTS)}
 
     def scrap_with_requests(self, url, type_link):
         backoff_time = 5
         for _ in range(MAX_RETRIES):
             try:
-                self.headers['User-Agent'] = self.ua.random
-                response = self.session.get(url, headers=self.headers, timeout=10)
+                self.headers['User-Agent'] = random.choice(USER_AGENTS)
+                response = self.session.get(url, headers=self.headers)
                 self.logger.info(f'Scrap url: {url} with status: {response.status_code}')
                 if response.status_code == StatusCode.SUCCESS.value:
                     return self._process_response(response, type_link)

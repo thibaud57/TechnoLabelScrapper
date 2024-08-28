@@ -70,16 +70,7 @@ class LabelProcessor:
             case MenuAction.PROCESS_SONGSTATS.value:
                 return self._process_label_content_from_songstats
             case MenuAction.PROCESS_LINKS.value:
-                return self._process_label_for_links
-            case MenuAction.PROCESS_VINYLS.value:
-                return self._process_label_for_vinyls
-
-    def _get_batch_method(self, action):
-        match action:
-            case MenuAction.PROCESS_SONGSTATS.value:
-                return self._process_label_content_from_songstats
-            case MenuAction.PROCESS_LINKS.value:
-                return self._process_label_for_links
+                return self._process_label_content_from_links
             case MenuAction.PROCESS_VINYLS.value:
                 return self._process_label_for_vinyls
 

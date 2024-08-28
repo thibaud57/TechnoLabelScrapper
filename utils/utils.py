@@ -17,9 +17,15 @@ def find_best_match(label_name, results, threshold=70):
 def find_demo_email(description):
     if description:
         lower_desc = ' '.join(description.lower().split())
-        demo_match = re.search(r'demo.*?([a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+)', lower_desc)
-        return demo_match.group(1) if demo_match else None
+        demo_match = re.search(r'\b([a-zA-Z0-9._%+-]*demo[s]?[a-zA-Z0-9._%+-]*@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,})\b',
+                               lower_desc)
+        if demo_match:
+            return demo_match.group(1)
+        demo_email_match = re.search(r'\bdemo.*?([a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+)', lower_desc)
+        if demo_email_match:
+            return demo_email_match.group(1)
     return None
+
     # all_emails = re.findall(r'[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+', description)
     # if all_emails:
     #     return all_emails[0]
@@ -38,6 +44,3 @@ def format_title_case(text):
 def extract_number(value: str) -> int:
     match = re.search(r'\d+', value)
     return int(match.group()) if match else 0
-
-
-

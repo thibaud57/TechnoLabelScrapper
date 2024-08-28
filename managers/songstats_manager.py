@@ -78,7 +78,8 @@ class SongstatsManager:
 
     def _scrap_label_links(self, page: Page, label_name: str) -> Dict[str, str]:
         label_links = {}
-        for type_link in TypeLink:
+        links_to_use = [type_link for type_link in TypeLink if type_link != TypeLink.BANDCAMP_URL]
+        for type_link in links_to_use:
             link = self._get_link(page, type_link.value, label_name)
             if link:
                 label_links[type_link.name] = link
