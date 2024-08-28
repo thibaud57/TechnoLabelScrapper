@@ -7,6 +7,7 @@ class TypeLink(Enum):
     FACEBOOK_URL = "facebook.com"
     INSTAGRAM_URL = "instagram.com"
     BEATSTATS_URL = "beatstats.com"
+    BANDCAMP_URL = "https://bandcamp.com"
 
     @classmethod
     def values(cls):

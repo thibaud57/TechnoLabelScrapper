@@ -97,6 +97,25 @@ class GoogleSheetsManager:
         self.logger.info(f'Prepared {len(updates)} individual column updates for {len(labels_in_success)} labels')
         return updates
 
+    def prepare_batch_updates_for_vinyles(self, labels_in_success):
+        updates = []
+        for success_info in labels_in_success:
+            try:
+                row = success_info['row']
+                label_info = success_info['label']
+                column_updates = [
+                    {'range': f'Labels!B{row}', 'values': [[label_info.get('country', '')]]},
+                    {'range': f'Labels!S{row}', 'values': [[label_info.get(TypeLink.BANDCAMP_URL.name, '')]]},
+                ]
+                updates.extend(column_updates)
+                self.logger.debug(f"Prepared updates for label: {label_info.get('name', 'Unknown')} at row {row}")
+            except KeyError as e:
+                self.logger.error(f'KeyError while preparing update: {str(e)}. Label info: {success_info}')
+            except Exception as e:
+                self.logger.error(f'Unexpected error while preparing update: {str(e)}. Label info: {success_info}')
+        self.logger.info(f'Prepared {len(updates)} individual column updates for {len(labels_in_success)} labels')
+        return updates
+
     def prepare_batch_updates_for_beatstats(self, labels):
         updates = []
         for label in labels:
@@ -160,3 +179,4 @@ class GoogleSheetsManager:
                 self.logger.error(f"Failed to update chunk starting at index {i}")
                 return False
         return True
+

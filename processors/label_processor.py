@@ -5,7 +5,7 @@ from typing import Dict, Any, List
 from constants import THREADS_NUMBER, CREDENTIALS_FILE, SPREADSHEET_ID, OUI
 from enums import MenuAction, TypeLink
 from loggers import AppLogger
-from managers import GoogleSheetsManager, SongstatsManager, BeatportManager, SoundcloudManager
+from managers import GoogleSheetsManager, SongstatsManager, BeatportManager, SoundcloudManager, BandcampManager
 from utils.utils import find_best_match
 
 
@@ -31,15 +31,13 @@ class LabelProcessor:
         self.total_labels_to_proceed = len(self.filtered_labels_from_sheet)
         self.logger.info(f'Total labels to process: {self.total_labels_to_proceed}')
 
-        process_method = self._process_label_content_from_songstats if action == MenuAction.PROCESS_SONGSTATS.value else self._process_label_content_from_links
+        process_method = self._get_process_method(action)
 
         with ThreadPoolExecutor(max_workers=THREADS_NUMBER) as executor:
             list(executor.map(process_method, self.filtered_labels_from_sheet))
 
         if self.labels_in_success:
-            updates = self.sheets_manager.prepare_batch_updates_for_songstats(
-                self.labels_in_success) if action == MenuAction.PROCESS_SONGSTATS.value else self.sheets_manager.prepare_batch_updates_for_links(
-                self.labels_in_success)
+            updates = self._prepare_batch_for_updates(action)
             success = self.sheets_manager.batch_update_in_chunks(updates)
             if not success:
                 self.logger.error('Failed to perform batch update')
@@ -66,6 +64,35 @@ class LabelProcessor:
                 for row in labels
                 if row[2] or row[3] or row[4] or row[5]
             ]
+
+    def _get_process_method(self, action):
+        match action:
+            case MenuAction.PROCESS_SONGSTATS.value:
+                return self._process_label_content_from_songstats
+            case MenuAction.PROCESS_LINKS.value:
+                return self._process_label_for_links
+            case MenuAction.PROCESS_VINYLS.value:
+                return self._process_label_for_vinyls
+
+    def _get_batch_method(self, action):
+        match action:
+            case MenuAction.PROCESS_SONGSTATS.value:
+                return self._process_label_content_from_songstats
+            case MenuAction.PROCESS_LINKS.value:
+                return self._process_label_for_links
+            case MenuAction.PROCESS_VINYLS.value:
+                return self._process_label_for_vinyls
+
+    def _prepare_batch_for_updates(self, action):
+        match action:
+            case MenuAction.PROCESS_SONGSTATS.value:
+                return self.sheets_manager.prepare_batch_updates_for_songstats(
+                    self.labels_in_success)
+            case MenuAction.PROCESS_LINKS.value:
+                return self.sheets_manager.prepare_batch_updates_for_links(
+                    self.labels_in_success)
+            case MenuAction.PROCESS_VINYLS.value:
+                return self.sheets_manager.prepare_batch_updates_for_vinyles(self.labels_in_success)
 
     def _process_label_content_from_songstats(self, label: Dict[str, Any]):
         try:
@@ -106,6 +133,26 @@ class LabelProcessor:
                 return
             self._process_label_for_links(label, label_name, label_row)
             self._add_label_info_to_success(label_row)
+        except Exception as e:
+            self._handle_exception(label_name, e)
+
+    def _process_label_for_vinyls(self, label: Dict[str, Any]):
+        try:
+            label_name, label_row = self._get_label_info(label)
+            if not label_row:
+                return
+            bandcamp_manager = BandcampManager()
+            labels_info = bandcamp_manager.get_bandcamp_info(label_name)
+            if not labels_info:
+                self._add_to_failure(label_name, 'No matching labels found')
+                return
+            best_match = find_best_match(label_name, labels_info, 90)
+            if not best_match:
+                self._add_to_failure(label_name, 'No best match found')
+                return
+            else:
+                self._add_to_label_info(label_row, best_match)
+                self._add_label_info_to_success(label_row)
         except Exception as e:
             self._handle_exception(label_name, e)
 

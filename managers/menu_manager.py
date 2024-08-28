@@ -1,6 +1,6 @@
 import time
 
-from constants import MENU_CHOICE_1, MENU_CHOICE_2, EXIT_KEY
+from constants import MENU_CHOICE_1, MENU_CHOICE_2, EXIT_KEY, MENU_CHOICE_3
 from enums.menu_action import MenuAction
 from loggers import AppLogger, LabelProcessingLog
 from processors import LabelProcessor, TopProcessor
@@ -11,7 +11,7 @@ class MenuManager:
         self.logger = AppLogger().get_logger()
         self.current_choice = None
         self.main_menu_text = '###MENU###\n1: Process labels\n2: Process top 100'
-        self.label_menu_text = '###LABEL MENU###\n1: Songstats\n2: Links'
+        self.label_menu_text = '###LABEL MENU###\n1: Songstats\n2: Links\n3: Vinyls'
 
     def display_main_menu(self):
         main_menu_choices = {MENU_CHOICE_1: MenuAction.PROCESS_LABELS.value,
@@ -37,7 +37,8 @@ class MenuManager:
 
     def _display_label_menu(self):
         label_menu_choices = {MENU_CHOICE_1: MenuAction.PROCESS_SONGSTATS.value,
-                              MENU_CHOICE_2: MenuAction.PROCESS_LINKS.value}
+                              MENU_CHOICE_2: MenuAction.PROCESS_LINKS.value,
+                              MENU_CHOICE_3: MenuAction.PROCESS_VINYLS.value}
         choice, action = self._get_user_choice(self.label_menu_text, label_menu_choices)
         if choice is not None:
             self._process_labels(action)
@@ -66,8 +67,6 @@ class MenuManager:
         except Exception as e:
             self.logger.error(f'An error occurred while processing the top 100: {e}')
         finally:
-            # if len(track_processor.tracks_in_success) > 0 or len(track_processor.tracks_in_failure) > 0:
-            #     self._handle_logs(track_processor)
             self.logger.info('###END TOP 100 PROCESSING###')
 
     def _handle_logs(self, processor):

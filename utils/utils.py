@@ -34,6 +34,10 @@ def format_title_case(text):
         title_case[0] = title_case[0].capitalize()
         return ' '.join(title_case)
 
+
 def extract_number(value: str) -> int:
     match = re.search(r'\d+', value)
     return int(match.group()) if match else 0
+
+
+

@@ -4,3 +4,4 @@ from .songstats_manager import SongstatsManager
 from .beatport_manager import BeatportManager
 from .soundcloud_manager import SoundcloudManager
 from .beatstats_manager import BeatstatsManager
+from .bandcamp_manager import BandcampManager
